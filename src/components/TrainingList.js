@@ -78,7 +78,7 @@ const TrainingList = props => {
   return (
     <Grid container direction="column">
       <Grid item>
-        <Typography>
+        <Typography variant="h4">
           {props.customer !== null
             ? `Trainings scheduled for customer ${props.customer.firstname} ${props.customer.lastname}`
             : "No customer selected"}
