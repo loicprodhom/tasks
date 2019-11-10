@@ -25,9 +25,10 @@ const TrainingList = props => {
                 newData.push({
                   ...element,
                   customer: responseCustomer.data,
-                  date: moment(element.date).format("DD.MM.YYYY")
+                  date: moment(element.date).format()
                 });
                 setTrainings([...newData]);
+                props.setCurrTrainings([...newData]);
               }
             })
             .catch(error => {
@@ -85,32 +86,34 @@ const TrainingList = props => {
         </Typography>
       </Grid>
       <Grid item>
-        <MaterialTable
-          title="Training List"
-          icons={tableIcons}
-          columns={headers}
-          data={trainings}
-          editable={
-            props.customer === null
-              ? {}
-              : {
-                  onRowAdd: newData =>
-                    new Promise(resolve => {
-                      setTimeout(() => {
-                        resolve();
-                        addTraining(newData);
-                      }, 600);
-                    }),
-                  onRowDelete: oldData =>
-                    new Promise(resolve => {
-                      setTimeout(() => {
-                        resolve();
-                        deleteTraining(oldData);
-                      }, 600);
-                    })
-                }
-          }
-        />
+        {props.customer === null ? null : (
+          <MaterialTable
+            title="Training List"
+            icons={tableIcons}
+            columns={headers}
+            data={trainings}
+            editable={
+              props.customer === null
+                ? {}
+                : {
+                    onRowAdd: newData =>
+                      new Promise(resolve => {
+                        setTimeout(() => {
+                          resolve();
+                          addTraining(newData);
+                        }, 600);
+                      }),
+                    onRowDelete: oldData =>
+                      new Promise(resolve => {
+                        setTimeout(() => {
+                          resolve();
+                          deleteTraining(oldData);
+                        }, 600);
+                      })
+                  }
+            }
+          />
+        )}
       </Grid>
     </Grid>
   );
