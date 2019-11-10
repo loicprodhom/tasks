@@ -3,26 +3,32 @@ import MaterialTable from "material-table";
 import Axios from "axios";
 import { tableIcons } from "./Icons";
 import * as moment from "moment";
-import { Button, Grid } from "@material-ui/core";
+import { Typography, Grid } from "@material-ui/core";
 
-const TrainingList = () => {
+const trainingEndpoint = "https://customerrest.herokuapp.com/api/trainings";
+
+const TrainingList = props => {
   const [trainings, setTrainings] = useState([]);
 
   const updateList = () => {
     let newData = [];
-    Axios.get("https://customerrest.herokuapp.com/api/trainings")
+    Axios.get(trainingEndpoint)
       .then(response => {
-        console.log(response.data.content);
-
         response.data.content.forEach(element => {
           Axios.get(element.links[2].href)
             .then(responseCustomer => {
-              newData.push({
-                ...element,
-                customer: responseCustomer.data,
-                date: moment(element.date).format("MMMM Do YYYY, hh:mm")
-              });
-              setTrainings([...newData]);
+              if (
+                props.customer !== null &&
+                props.customer.links[0].href ===
+                  responseCustomer.data.links[0].href
+              ) {
+                newData.push({
+                  ...element,
+                  customer: responseCustomer.data,
+                  date: moment(element.date).format("DD.MM.YYYY")
+                });
+                setTrainings([...newData]);
+              }
             })
             .catch(error => {
               console.log(error);
@@ -37,85 +43,74 @@ const TrainingList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addTraining = () => {
-    //Coming Soon...
-    updateList();
+  const addTraining = training => {
+    training.customer = props.customer.links[0].href;
+    training.date = moment(training.date).format();
+    Axios.post(trainingEndpoint, training)
+      .then(() => {
+        updateList();
+      })
+      .catch(error => {
+        console.log(error);
+      });
   };
 
-  const editTraining = () => {
-    //Coming Soon...
-  };
-
-  const removeTraining = () => {
-    //Coming Soon...
+  const deleteTraining = training => {
+    Axios.delete(training.links[0].href)
+      .then(() => {
+        updateList();
+      })
+      .catch(error => {
+        console.log(error);
+      });
   };
 
   const headers = [
     { title: "Activity", field: "activity" },
-    { title: "Date", field: "date" },
-    { title: "Duration", field: "duration" },
     {
-      title: "Customer",
-      field: "customer",
-      render: rowData => {
-        return (
-          <div>
-            {rowData.customer.firstname} {rowData.customer.lastname}
-          </div>
-        );
-      }
+      title: "Date",
+      field: "date",
+      type: "date"
     },
-    {
-      title: "Actions",
-      render: rowData => (
-        <Grid container spacing={2}>
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                editTraining();
-              }}
-            >
-              Edit
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => {
-                removeTraining();
-              }}
-            >
-              Delete
-            </Button>
-          </Grid>
-        </Grid>
-      )
-    }
+    { title: "Duration", field: "duration" }
   ];
 
   return (
     <Grid container direction="column">
+      <Grid item>
+        <Typography>
+          {props.customer !== null
+            ? `Trainings scheduled for customer ${props.customer.firstname} ${props.customer.lastname}`
+            : "No customer selected"}
+        </Typography>
+      </Grid>
       <Grid item>
         <MaterialTable
           title="Training List"
           icons={tableIcons}
           columns={headers}
           data={trainings}
+          editable={
+            props.customer === null
+              ? {}
+              : {
+                  onRowAdd: newData =>
+                    new Promise(resolve => {
+                      setTimeout(() => {
+                        resolve();
+                        addTraining(newData);
+                      }, 600);
+                    }),
+                  onRowDelete: oldData =>
+                    new Promise(resolve => {
+                      setTimeout(() => {
+                        resolve();
+                        deleteTraining(oldData);
+                      }, 600);
+                    })
+                }
+          }
         />
-      </Grid>
-      <Grid item>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => {
-            addTraining();
-          }}
-        >
-          Add Training
-        </Button>
       </Grid>
     </Grid>
   );
